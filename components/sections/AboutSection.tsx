@@ -93,6 +93,21 @@ export async function AboutSection() {
           )}
         </div>
 
+        <div className="mt-8 rounded-xl border bg-muted/20 p-5">
+          <p className="text-sm font-semibold mb-3">GenAI Focus</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            I build full-stack AI products with retrieval systems, tool-enabled agents, and production-ready
+            API architecture using modern LLM frameworks.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {["LangChain", "LangGraph", "RAG", "Semantic Search", "Agent Orchestration"].map((skill) => (
+              <span key={skill} className="rounded-md bg-background px-2.5 py-1 text-xs border">
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+
         {/* Stats from CMS */}
         {profile.stats && profile.stats.length > 0 && (
           <div className="@container mt-12 pt-12 border-t">

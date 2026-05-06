@@ -1,5 +1,6 @@
 export { AboutSection } from "./AboutSection";
 export { AchievementsSection } from "./AchievementsSection";
+export { AIProjectsSection } from "./AIProjectsSection";
 export { BlogSection } from "./BlogSection";
 export { CertificationsSection } from "./CertificationsSection";
 export { ContactForm } from "./ContactForm";

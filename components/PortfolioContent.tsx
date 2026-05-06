@@ -1,6 +1,6 @@
 import {
   AboutSection,
-  AchievementsSection,
+  AIProjectsSection,
   BlogSection,
   CertificationsSection,
   ContactSection,
@@ -8,8 +8,6 @@ import {
   ExperienceSection,
   HeroSection,
   ProjectsSection,
-  ServicesSection,
-  SkillsSection,
   TestimonialsSection,
 } from "@/components/sections";
 
@@ -18,11 +16,15 @@ async function PortfolioContent() {
     <>
       <HeroSection />
       <AboutSection />
+      <AIProjectsSection />
+
       <ExperienceSection />
-      <EducationSection />
+
       <CertificationsSection />
       <TestimonialsSection />
       <ProjectsSection />
+      <EducationSection />
+
       {/* <SkillsSection /> */}
 
       {/* <AchievementsSection /> */}

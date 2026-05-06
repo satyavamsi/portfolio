@@ -64,6 +64,9 @@ export async function HeroSection() {
               <p className="text-base @md/hero:text-lg text-muted-foreground leading-relaxed">
                 {profile.shortBio}
               </p>
+              <p className="inline-flex rounded-md bg-primary/10 px-3 py-1 text-xs @md/hero:text-sm font-medium text-primary">
+                Full Stack GenAI Developer - LangChain & LangGraph
+              </p>
 
               {profile.socialLinks && (
                 <div className="flex flex-wrap gap-3 @md/hero:gap-4 pt-4">
