@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -19,6 +19,7 @@ import {
   UtensilsCrossed,
   Wallet,
   Wind,
+  X,
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -113,13 +114,25 @@ interface WeatherData {
 // ─── Currency helpers ─────────────────────────────────────────────────────────
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
-  INR: "₹", USD: "$", EUR: "€", GBP: "£", JPY: "¥",
-  AUD: "A$", CAD: "C$", SGD: "S$", THB: "฿", MYR: "RM",
-  IDR: "Rp", PHP: "₱", KRW: "₩",
+  INR: "₹",
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  JPY: "¥",
+  AUD: "A$",
+  CAD: "C$",
+  SGD: "S$",
+  THB: "฿",
+  MYR: "RM",
+  IDR: "Rp",
+  PHP: "₱",
+  KRW: "₩",
 };
 
 function currencySymbol(code: string | undefined): string {
-  return CURRENCY_SYMBOLS[code?.toUpperCase() ?? ""] ?? (code ? `${code} ` : "$");
+  return (
+    CURRENCY_SYMBOLS[code?.toUpperCase() ?? ""] ?? (code ? `${code} ` : "$")
+  );
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -153,18 +166,21 @@ const eventToNodeId = (name: string) => `${name}_node`;
 
 // ─── Graph layout ─────────────────────────────────────────────────────────────
 
-const NODE_LAYOUT: Record<string, { cx: number; cy: number; isParallel: boolean }> = {
-  intent_node:      { cx: 240, cy: 40,  isParallel: false },
-  extract_node:     { cx: 240, cy: 110, isParallel: false },
-  geo_node:         { cx: 240, cy: 180, isParallel: false },
-  planner_node:     { cx: 240, cy: 250, isParallel: false },
-  places_node:      { cx: 40,  cy: 360, isParallel: true  },
-  hotels_node:      { cx: 140, cy: 360, isParallel: true  },
-  restaurants_node: { cx: 240, cy: 360, isParallel: true  },
-  weather_node:     { cx: 340, cy: 360, isParallel: true  },
-  budget_node:      { cx: 440, cy: 360, isParallel: true  },
-  optimizer_node:   { cx: 240, cy: 460, isParallel: false },
-  final_node:       { cx: 240, cy: 530, isParallel: false },
+const NODE_LAYOUT: Record<
+  string,
+  { cx: number; cy: number; isParallel: boolean }
+> = {
+  intent_node: { cx: 240, cy: 40, isParallel: false },
+  extract_node: { cx: 240, cy: 110, isParallel: false },
+  geo_node: { cx: 240, cy: 180, isParallel: false },
+  planner_node: { cx: 240, cy: 250, isParallel: false },
+  places_node: { cx: 40, cy: 360, isParallel: true },
+  hotels_node: { cx: 140, cy: 360, isParallel: true },
+  restaurants_node: { cx: 240, cy: 360, isParallel: true },
+  weather_node: { cx: 340, cy: 360, isParallel: true },
+  budget_node: { cx: 440, cy: 360, isParallel: true },
+  optimizer_node: { cx: 240, cy: 460, isParallel: false },
+  final_node: { cx: 240, cy: 530, isParallel: false },
 };
 
 const EDGES: Array<[string, string]> = [
@@ -238,10 +254,30 @@ function PipelineGraph({ nodes }: { nodes: GraphNodeData[] }) {
         const h = n.isParallel ? PH : NH;
 
         const colors = {
-          idle:     { stroke: "currentColor", fill: "transparent", text: "currentColor", opacity: 0.25 },
-          running:  { stroke: "#3b82f6", fill: "#dbeafe",  text: "#1d4ed8", opacity: 1 },
-          complete: { stroke: "#22c55e", fill: "#dcfce7",  text: "#15803d", opacity: 1 },
-          error:    { stroke: "#ef4444", fill: "#fee2e2",  text: "#b91c1c", opacity: 1 },
+          idle: {
+            stroke: "currentColor",
+            fill: "transparent",
+            text: "currentColor",
+            opacity: 0.25,
+          },
+          running: {
+            stroke: "#3b82f6",
+            fill: "#dbeafe",
+            text: "#1d4ed8",
+            opacity: 1,
+          },
+          complete: {
+            stroke: "#22c55e",
+            fill: "#dcfce7",
+            text: "#15803d",
+            opacity: 1,
+          },
+          error: {
+            stroke: "#ef4444",
+            fill: "#fee2e2",
+            text: "#b91c1c",
+            opacity: 1,
+          },
         }[n.state];
 
         return (
@@ -316,17 +352,23 @@ async function* streamDemo(file: string): AsyncGenerator<StreamEvent> {
     await new Promise((r) =>
       setTimeout(
         r,
-        event.type === "graph_start"     ? 300
-        : event.type === "node_start"    ? 500
-        : event.type === "node_complete" ? 700
-        : 300,
+        event.type === "graph_start"
+          ? 300
+          : event.type === "node_start"
+            ? 500
+            : event.type === "node_complete"
+              ? 700
+              : 300,
       ),
     );
     yield event;
   }
 }
 
-async function* streamLive(query: string, url: string): AsyncGenerator<StreamEvent> {
+async function* streamLive(
+  query: string,
+  url: string,
+): AsyncGenerator<StreamEvent> {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -411,7 +453,11 @@ function EatCard({ place }: { place: EatItem }) {
           {(place.snippet || place.cuisine) && (
             <div className="flex items-center gap-1.5 shrink-0">
               <PriceTag snippet={place.snippet} />
-              {place.cuisine && <span className="text-xs text-muted-foreground">{place.cuisine}</span>}
+              {place.cuisine && (
+                <span className="text-xs text-muted-foreground">
+                  {place.cuisine}
+                </span>
+              )}
             </div>
           )}
         </div>
@@ -544,7 +590,8 @@ function TripSummaryHeader({
   const temp = weather?.current_weather?.temperature;
   const wind = weather?.current_weather?.windspeed;
   const sym = currencySymbol(plan.currency ?? currency);
-  const budgetDisplay = plan.budget != null ? `${sym}${plan.budget.toLocaleString()}` : null;
+  const budgetDisplay =
+    plan.budget != null ? `${sym}${plan.budget.toLocaleString()}` : null;
 
   return (
     <div className="rounded-2xl border bg-linear-to-br from-primary/5 via-background to-background p-6 mb-6">
@@ -564,14 +611,18 @@ function TripSummaryHeader({
           <div className="flex items-center gap-2 rounded-xl border bg-card px-3.5 py-2">
             <CalendarDays className="size-4 text-muted-foreground" />
             <div>
-              <p className="text-xs text-muted-foreground leading-none mb-0.5">Duration</p>
+              <p className="text-xs text-muted-foreground leading-none mb-0.5">
+                Duration
+              </p>
               <p className="text-sm font-semibold">{plan.tripDays} days</p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-xl border bg-card px-3.5 py-2">
             <Wallet className="size-4 text-muted-foreground" />
             <div>
-              <p className="text-xs text-muted-foreground leading-none mb-0.5">Budget</p>
+              <p className="text-xs text-muted-foreground leading-none mb-0.5">
+                Budget
+              </p>
               <p className="text-sm font-semibold">{budgetDisplay}</p>
             </div>
           </div>
@@ -579,7 +630,9 @@ function TripSummaryHeader({
             <div className="flex items-center gap-2 rounded-xl border bg-card px-3.5 py-2">
               <Cloud className="size-4 text-muted-foreground" />
               <div>
-                <p className="text-xs text-muted-foreground leading-none mb-0.5">Weather</p>
+                <p className="text-xs text-muted-foreground leading-none mb-0.5">
+                  Weather
+                </p>
                 <p className="text-sm font-semibold">{temp}°C</p>
               </div>
               {wind !== undefined && (
@@ -596,6 +649,50 @@ function TripSummaryHeader({
   );
 }
 
+// ─── Video modal ──────────────────────────────────────────────────────────────
+
+const DEMO_VIDEO_URL = "https://www.youtube.com/embed/t9NBg3VxUa0?si=KWl9hUttoyg24hMU";
+
+function VideoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-3xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute -top-10 right-0 flex items-center gap-1.5 text-xs text-white/70 hover:text-white transition-colors"
+        >
+          <X className="size-4" /> Close
+        </button>
+        <div className="overflow-hidden rounded-xl border bg-black aspect-video shadow-2xl">
+          <iframe
+            src={`${DEMO_VIDEO_URL}&autoplay=1`}
+            title="AI Travel Planner demo"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="w-full h-full"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function TravelPlannerDemo() {
@@ -605,6 +702,7 @@ export function TravelPlannerDemo() {
   const [liveMode, setLiveMode] = useState(false);
   const [liveApiUrl, setLiveApiUrl] = useState(LIVE_API_URL);
   const [running, setRunning] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [plan, setPlan] = useState<OptimizedPlan | null>(null);
   const [weather, setWeather] = useState<WeatherData | null>(null);
@@ -615,7 +713,10 @@ export function TravelPlannerDemo() {
 
   const appendLog = useCallback((entry: LogEntry) => {
     setLog((prev) => [...prev, entry]);
-    setTimeout(() => logEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    setTimeout(
+      () => logEndRef.current?.scrollIntoView({ behavior: "smooth" }),
+      50,
+    );
   }, []);
 
   const setNodeState = useCallback((nodeId: string, state: NodeState) => {
@@ -662,7 +763,13 @@ export function TravelPlannerDemo() {
         if (event.type === "graph_start" && event.topology) {
           const initNodes: GraphNodeData[] = event.topology.nodes.map((n) => {
             labelCache.set(n.id, n.label);
-            return { id: n.id, label: n.label, description: n.description, state: "idle", isParallel: !!n.parallel };
+            return {
+              id: n.id,
+              label: n.label,
+              description: n.description,
+              state: "idle",
+              isParallel: !!n.parallel,
+            };
           });
           setGraphNodes(initNodes);
           appendLog({ type: "graph_start", message: "Pipeline started" });
@@ -671,13 +778,19 @@ export function TravelPlannerDemo() {
         if (event.type === "node_start" && event.node) {
           const id = eventToNodeId(event.node);
           setNodeState(id, "running");
-          appendLog({ type: "node_start", message: `▶ ${labelCache.get(id) ?? event.node}` });
+          appendLog({
+            type: "node_start",
+            message: `▶ ${labelCache.get(id) ?? event.node}`,
+          });
         }
 
         if (event.type === "node_complete" && event.node) {
           const id = eventToNodeId(event.node);
           setNodeState(id, "complete");
-          appendLog({ type: "node_complete", message: `✓ ${labelCache.get(id) ?? event.node}` });
+          appendLog({
+            type: "node_complete",
+            message: `✓ ${labelCache.get(id) ?? event.node}`,
+          });
 
           if (event.node === "final" && event.state) {
             const rawPlan = event.state.optimizedPlan;
@@ -688,7 +801,9 @@ export function TravelPlannerDemo() {
                     ? (JSON.parse(rawPlan) as OptimizedPlan)
                     : (rawPlan as OptimizedPlan),
                 );
-              } catch { /* ignore */ }
+              } catch {
+                /* ignore */
+              }
             }
             const rawWeather = event.state.weather;
             if (rawWeather) setWeather(rawWeather as WeatherData);
@@ -700,7 +815,10 @@ export function TravelPlannerDemo() {
         if (event.type === "node_error" && event.node) {
           const id = eventToNodeId(event.node);
           setNodeState(id, "error");
-          appendLog({ type: "node_error", message: `✕ ${labelCache.get(id) ?? event.node}` });
+          appendLog({
+            type: "node_error",
+            message: `✕ ${labelCache.get(id) ?? event.node}`,
+          });
         }
 
         if (event.type === "graph_complete") {
@@ -760,17 +878,24 @@ export function TravelPlannerDemo() {
           weather, and multi-currency budget estimation — running in parallel and
           streaming results in real time.
         </p>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {["LangGraph", "Streaming", "Node Agents", "OpenAI"].map((tag) => (
-            <span
-              key={tag}
-              className="rounded-md bg-muted px-2.5 py-1 text-xs"
-            >
+            <span key={tag} className="rounded-md bg-muted px-2.5 py-1 text-xs">
               {tag}
             </span>
           ))}
+          <button
+            type="button"
+            onClick={() => setVideoOpen(true)}
+            className="flex items-center gap-1.5 rounded-md bg-red-600 hover:bg-red-700 px-2.5 py-1 text-xs font-medium text-white transition-colors"
+          >
+            <Play className="size-3 fill-current" />
+            Watch Demo
+          </button>
         </div>
       </div>
+
+      <VideoModal open={videoOpen} onClose={() => setVideoOpen(false)} />
 
       <div className="flex flex-col lg:flex-row flex-1 min-h-0">
         {/* ── Left half: Graph + Log ── */}
@@ -798,9 +923,9 @@ export function TravelPlannerDemo() {
           <div className="px-6 py-3 border-t flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-muted-foreground">
             {[
               { cls: "bg-gray-300 dark:bg-gray-600", label: "Idle" },
-              { cls: "bg-blue-500",  label: "Running" },
+              { cls: "bg-blue-500", label: "Running" },
               { cls: "bg-green-500", label: "Done" },
-              { cls: "bg-red-500",   label: "Error" },
+              { cls: "bg-red-500", label: "Error" },
             ].map((s) => (
               <span key={s.label} className="flex items-center gap-1.5">
                 <span className={cn("size-2 rounded-full", s.cls)} />
@@ -822,10 +947,13 @@ export function TravelPlannerDemo() {
                     key={i}
                     className={cn(
                       "flex items-center gap-1.5",
-                      entry.type === "node_complete"  && "text-green-600 dark:text-green-400",
-                      entry.type === "node_start"     && "text-blue-500",
-                      entry.type === "node_error"     && "text-red-500",
-                      (entry.type === "graph_start" || entry.type === "graph_complete") && "text-muted-foreground",
+                      entry.type === "node_complete" &&
+                        "text-green-600 dark:text-green-400",
+                      entry.type === "node_start" && "text-blue-500",
+                      entry.type === "node_error" && "text-red-500",
+                      (entry.type === "graph_start" ||
+                        entry.type === "graph_complete") &&
+                        "text-muted-foreground",
                     )}
                   >
                     <span className="opacity-40 shrink-0">›</span>
@@ -914,12 +1042,21 @@ export function TravelPlannerDemo() {
                         : "hover:bg-accent text-muted-foreground",
                     )}
                   >
-                    <Zap className={cn("size-3.5", liveMode && "fill-amber-500 text-amber-500")} />
+                    <Zap
+                      className={cn(
+                        "size-3.5",
+                        liveMode && "fill-amber-500 text-amber-500",
+                      )}
+                    />
                     Live Mode
                   </button>
 
                   {running ? (
-                    <Button variant="outline" onClick={reset} className="rounded-xl h-10 px-4">
+                    <Button
+                      variant="outline"
+                      onClick={reset}
+                      className="rounded-xl h-10 px-4"
+                    >
                       <RefreshCw className="size-4" />
                       Stop
                     </Button>
@@ -994,7 +1131,11 @@ export function TravelPlannerDemo() {
             {/* Travel plan */}
             {plan && (
               <div className="space-y-5">
-                <TripSummaryHeader plan={plan} weather={weather} currency={currency} />
+                <TripSummaryHeader
+                  plan={plan}
+                  weather={weather}
+                  currency={currency}
+                />
                 {plan.dayPlans.map((day) => (
                   <DayCard key={day.day} plan={day} />
                 ))}
@@ -1008,15 +1149,23 @@ export function TravelPlannerDemo() {
                   <MapPin className="size-7 opacity-20" />
                 </div>
                 <div className="space-y-1 max-w-sm">
-                  <p className="font-medium text-foreground">Plan your next trip</p>
+                  <p className="font-medium text-foreground">
+                    Plan your next trip
+                  </p>
                   <p className="text-sm">
                     Pick a prebuilt query above and click{" "}
-                    <strong className="text-foreground">Plan Trip</strong> to watch
-                    the LangGraph pipeline run and generate a day-by-day itinerary.
+                    <strong className="text-foreground">Plan Trip</strong> to
+                    watch the LangGraph pipeline run and generate a day-by-day
+                    itinerary.
                   </p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-2 text-xs text-muted-foreground">
-                  {["Day-by-day itinerary", "Hotels & restaurants", "Live maps links", "Budget breakdown"].map((f) => (
+                  {[
+                    "Day-by-day itinerary",
+                    "Hotels & restaurants",
+                    "Live maps links",
+                    "Budget breakdown",
+                  ].map((f) => (
                     <span
                       key={f}
                       className="flex items-center gap-1 rounded-full border px-3 py-1"
